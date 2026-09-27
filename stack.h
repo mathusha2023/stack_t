@@ -17,6 +17,7 @@ typedef enum StackError
     STACK_SIZE_GREATER_THAN_CAPACITY,
     STACK_OVERFLOW,
     STACK_EMPTY,
+    STACK_GROWING_NOT_NEED,
 } StackError;
 
 static const char *STR_STACK_ERRORS[] = {
@@ -30,6 +31,7 @@ static const char *STR_STACK_ERRORS[] = {
     "STACK_SIZE_GREATER_THAN_CAPACITY",
     "STACK_OVERFLOW",
     "STACK_EMPTY",
+    "STACK_GROWING_NOT_NEED",
 };
 
 typedef struct Stack

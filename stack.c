@@ -4,6 +4,46 @@
 #include "config.h"
 #include "log.h"
 
+static StackError grow_stack(Stack *stk)
+{
+    assert(stk);
+
+    flog("Beginning stack [%p] growing... Old size: %lu", stk, stk->capacity);
+
+    StackError error = is_stack_ok(stk);
+    if (error != STACK_OK)
+    {
+        flog("Stack [%p] not OK before growing!", stk);
+        return error;
+    }
+
+    if (stk->capacity != stk->size)
+    {
+        flog("Stack [%p] growing not need: stk->capacity != stk->size", stk);
+        return STACK_GROWING_NOT_NEED;
+    }
+
+    stack_el_t *temp = (stack_el_t *)realloc(stk->data, 2 * stk->capacity * sizeof(stack_el_t));
+    if (!temp)
+    {
+        flog("ERROR while reallocating memory for stack [%p]", stk);
+        return STACK_MEMORY_ERROR;
+    }
+
+    stk->data = temp;
+    stk->capacity *= 2;
+
+    error = is_stack_ok(stk);
+    if (error != STACK_OK)
+    {
+        flog("Stack [%p] not OK after reallocating!", stk);
+        return error;
+    }
+
+    flog("Stack [%p] growing successful! New size: %lu", stk, stk->capacity);
+    return STACK_OK;
+}
+
 StackError init_stack(Stack *stk, size_t capacity)
 {
     assert(stk);
@@ -55,11 +95,16 @@ StackError push_stack(Stack *stk, stack_el_t value)
 
     if (stk->size == stk->capacity)
     {
-        flog("Stack [%p] size equals capacity, pushing impossible", stk);
-        return STACK_OVERFLOW;
+        flog("Stack [%p] size equals capacity, beginning growing...", stk);
+        error = grow_stack(stk);
+        if (error != STACK_OK)
+        {
+            flog("Error while growing stack [%p]: %s", stk, get_stack_error(error));
+            return error;
+        }
+        flog("Stack [%p] growing successful, time for pushing", stk);
     }
 
-    // stk->size < stk->capacity, easy pushing
     stk->data[stk->size++] = value;
 
     error = is_stack_ok(stk);

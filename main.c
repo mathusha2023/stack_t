@@ -16,7 +16,7 @@ int main(void)
         return error;
     }
 
-    for (size_t i = 0; i < get_capacity(&stack); i++)
+    for (size_t i = 0; i < 80; i++)
     {
         error = push_stack(&stack, 10 * i + 10);
         if (error != STACK_OK)
