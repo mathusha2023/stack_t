@@ -4,45 +4,9 @@
 #include "config.h"
 #include "log.h"
 
-static StackError grow_stack(Stack *stk)
-{
-    assert(stk);
-
-    flog("Beginning stack [%p] growing... Old size: %lu", stk, stk->capacity);
-
-    StackError error = is_stack_ok(stk);
-    if (error != STACK_OK)
-    {
-        flog("Stack [%p] not OK before growing!", stk);
-        return error;
-    }
-
-    if (stk->capacity != stk->size)
-    {
-        flog("Stack [%p] growing not need: stk->capacity != stk->size", stk);
-        return STACK_GROWING_NOT_NEED;
-    }
-
-    stack_el_t *temp = (stack_el_t *)realloc(stk->data, 2 * stk->capacity * sizeof(stack_el_t));
-    if (!temp)
-    {
-        flog("ERROR while reallocating memory for stack [%p]", stk);
-        return STACK_MEMORY_ERROR;
-    }
-
-    stk->data = temp;
-    stk->capacity *= 2;
-
-    error = is_stack_ok(stk);
-    if (error != STACK_OK)
-    {
-        flog("Stack [%p] not OK after reallocating!", stk);
-        return error;
-    }
-
-    flog("Stack [%p] growing successful! New size: %lu", stk, stk->capacity);
-    return STACK_OK;
-}
+static StackError grow_stack(Stack *stk);
+static StackError reduce_stack(Stack *stk);
+static int need_stack_reduce(Stack *stk);
 
 StackError init_stack(Stack *stk, size_t capacity)
 {
@@ -135,6 +99,18 @@ StackError pop_stack(Stack *stk, stack_el_t *buffer)
     {
         flog("Stack [%p] size is 0, cant pop elem", stk);
         return STACK_EMPTY;
+    }
+
+    if (need_stack_reduce(stk))
+    {
+        flog("Stack [%p] can be reduced. Beginning...", stk);
+        error = reduce_stack(stk);
+        if (error != STACK_OK)
+        {
+            flog("Error while reducing stack [%p]: %s", stk, get_stack_error(error));
+            return error;
+        }
+        flog("Stack [%p] reducing successful, time for popping", stk);
     }
 
     // stk->size > 0
@@ -240,4 +216,105 @@ size_t get_size(Stack *stk)
 {
     assert(stk);
     return stk->size;
+}
+
+static StackError grow_stack(Stack *stk)
+{
+    assert(stk);
+
+    flog("Beginning stack [%p] growing... Old capacity: %lu", stk, stk->capacity);
+
+    StackError error = is_stack_ok(stk);
+    if (error != STACK_OK)
+    {
+        flog("Stack [%p] not OK before growing!", stk);
+        return error;
+    }
+
+    if (stk->capacity != stk->size)
+    {
+        flog("Stack [%p] growing not need: stk->capacity != stk->size", stk);
+        return STACK_GROWING_NOT_NEED;
+    }
+
+    stack_el_t *temp = (stack_el_t *)realloc(stk->data, 2 * stk->capacity * sizeof(stack_el_t));
+    if (!temp)
+    {
+        flog("ERROR while reallocating memory for stack [%p]", stk);
+        return STACK_MEMORY_ERROR;
+    }
+
+    stk->data = temp;
+    stk->capacity *= 2;
+
+    error = is_stack_ok(stk);
+    if (error != STACK_OK)
+    {
+        flog("Stack [%p] not OK after reallocating!", stk);
+        return error;
+    }
+
+    flog("Stack [%p] growing successful! New capacity: %lu", stk, stk->capacity);
+    return STACK_OK;
+}
+
+// уменьшаем размер стека в 2 раза, только если
+static StackError reduce_stack(Stack *stk)
+{
+    assert(stk);
+
+    flog("Beginning stack [%p] reducing... Old capacity: %lu", stk, stk->capacity);
+
+    StackError error = is_stack_ok(stk);
+    if (error != STACK_OK)
+    {
+        flog("Stack [%p] not OK before reducing!", stk);
+        return error;
+    }
+
+    if (stk->capacity <= MIN_STACK_CAPACITY_TO_REDUCE)
+    {
+        flog("Stack [%p] capacity = %lu, "
+             "MIN_STACK_CAPACITY_TO_REDUCE = %lu, "
+             "stack reducing not need",
+             stk, stk->capacity, MIN_STACK_CAPACITY_TO_REDUCE);
+        return STACK_REDUCING_NOT_NEED;
+    }
+
+    if (stk->size * 2 >= stk->capacity)
+    {
+        flog("Stack [%p] capacity = %lu, "
+             "size = %lu, "
+             "stack reducing not allowed becouse size less than capacity in less than 2 times",
+             stk, stk->capacity, stk->size);
+        return STACK_REDUCING_NOT_ALLOWED;
+    }
+
+    stk->capacity = ++stk->capacity / 2;
+
+    stack_el_t *temp = (stack_el_t *)realloc(stk->data, stk->capacity * sizeof(stack_el_t));
+    if (!temp)
+    {
+        flog("ERROR while reallocating memory for stack [%p]", stk);
+        return STACK_MEMORY_ERROR;
+    }
+
+    stk->data = temp;
+
+    error = is_stack_ok(stk);
+    if (error != STACK_OK)
+    {
+        flog("Stack [%p] not OK after reallocating!", stk);
+        return error;
+    }
+
+    flog("Stack [%p] reducing successful! New capacity: %lu", stk, stk->capacity);
+    return STACK_OK;
+}
+
+static int need_stack_reduce(Stack *stk)
+{
+    assert(stk);
+
+    return stk->capacity > MIN_STACK_CAPACITY_TO_REDUCE && stk->size * 2 < stk->capacity;
 }

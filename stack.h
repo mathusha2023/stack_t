@@ -5,6 +5,9 @@
 
 typedef int stack_el_t;
 
+// уменьшение размера стека будет работать только если его размер превышает данное значение
+const size_t MIN_STACK_CAPACITY_TO_REDUCE = 100;
+
 typedef enum StackError
 {
     STACK_OK,
@@ -18,6 +21,8 @@ typedef enum StackError
     STACK_OVERFLOW,
     STACK_EMPTY,
     STACK_GROWING_NOT_NEED,
+    STACK_REDUCING_NOT_NEED,
+    STACK_REDUCING_NOT_ALLOWED,
 } StackError;
 
 static const char *STR_STACK_ERRORS[] = {
@@ -32,6 +37,8 @@ static const char *STR_STACK_ERRORS[] = {
     "STACK_OVERFLOW",
     "STACK_EMPTY",
     "STACK_GROWING_NOT_NEED",
+    "STACK_REDUCING_NOT_NEED",
+    "STACK_REDUCING_NOT_ALLOWED",
 };
 
 typedef struct Stack

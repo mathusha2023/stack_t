@@ -16,7 +16,7 @@ int main(void)
         return error;
     }
 
-    for (size_t i = 0; i < 80; i++)
+    for (size_t i = 0; i < 192882; i++)
     {
         error = push_stack(&stack, 10 * i + 10);
         if (error != STACK_OK)
@@ -26,13 +26,8 @@ int main(void)
         }
     }
 
-    error = push_stack(&stack, 93848);
-    if (error != STACK_OK)
-    {
-        log("Error while pushing stack [%p]: %s", &stack, get_stack_error(error));
-    }
-
-    for (size_t i = 0; i < get_capacity(&stack); i++)
+    size_t capacity = get_capacity(&stack);
+    for (size_t i = 0; capacity; i++)
     {
         stack_el_t el = 0;
         error = pop_stack(&stack, &el);
@@ -42,6 +37,7 @@ int main(void)
             return error;
         }
         printf("Get stack el: %d\n", el);
+        printf("Now stack capacity is: %lu\n", get_capacity(&stack));
     }
 
     stack_el_t el = 0;
