@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 // #define DISABLE_LOGS
+// #define NSTKDEBUG
 
 #define RED_COLOR "\x1b[31m"
 #define GREEN_COLOR "\x1b[32m"

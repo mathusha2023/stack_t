@@ -1,4 +1,10 @@
 #include <stdio.h>
+
+// TODO - fix it
+// определение типа элементов нашего стэка
+// если убрать define, будет выбран тип по умолчанию - double
+// #define STACK_EL_TYPE int
+
 #include "stack.h"
 #include "log.h"
 
@@ -16,59 +22,10 @@ int main(void)
         return error;
     }
 
-    for (size_t i = 0; i < 192882; i++)
+    for (size_t i = 0; i < 24; i++)
     {
-        error = push_stack(&stack, 10 * i + 10);
-        if (error != STACK_OK)
-        {
-            log("Error while pushing stack [%p]: %s", &stack, get_stack_error(error));
-            return error;
-        }
+        push_stack(&stack, i * 10 + 1);
     }
-
-    size_t capacity = get_capacity(&stack);
-    for (size_t i = 0; capacity; i++)
-    {
-        stack_el_t el = 0;
-        error = pop_stack(&stack, &el);
-        if (error != STACK_OK)
-        {
-            log("Error while popping stack [%p]: %s", &stack, get_stack_error(error));
-            return error;
-        }
-        printf("Get stack el: %d\n", el);
-        printf("Now stack capacity is: %lu\n", get_capacity(&stack));
-    }
-
-    stack_el_t el = 0;
-    error = pop_stack(&stack, &el);
-    if (error != STACK_OK)
-    {
-        log("Error while popping stack [%p]: %s", &stack, get_stack_error(error));
-    }
-
-    el = 0;
-    error = pop_stack(&stack, &el);
-    if (error != STACK_OK)
-    {
-        log("Error while popping stack [%p]: %s", &stack, get_stack_error(error));
-    }
-
-    error = push_stack(&stack, 93848);
-    if (error != STACK_OK)
-    {
-        log("Error while pushing stack [%p]: %s", &stack, get_stack_error(error));
-    }
-
-    el = 0;
-    error = pop_stack(&stack, &el);
-    if (error != STACK_OK)
-    {
-        log("Error while popping stack [%p]: %s", &stack, get_stack_error(error));
-    }
-    printf("Get stack el: %d\n", el);
-
-    printf("Stack size is: %lu\n", get_size(&stack));
 
     error = destroy_stack(&stack);
     if (error != STACK_OK)

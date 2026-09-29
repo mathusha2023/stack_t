@@ -9,6 +9,10 @@ void restart_log()
 {
     FILE *zalupasanyfile = fopen(LOGFILE_NAME, "w");
     assert(zalupasanyfile);
+
+    fprintf(zalupasanyfile, "############# <stack_t> #############\n");
+    fprintf(zalupasanyfile, "Compiled at: %s %s\n\n", __DATE__, __TIME__);
+
     fclose(zalupasanyfile);
 }
 

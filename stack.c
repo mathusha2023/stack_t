@@ -8,12 +8,62 @@ static StackError grow_stack(Stack *stk);
 static StackError reduce_stack(Stack *stk);
 static int need_stack_reduce(Stack *stk);
 
-StackError init_stack(Stack *stk, size_t capacity)
+void dump_stack(Stack *stk)
+{
+#ifndef NSTKDEBUG
+    assert(stk);
+
+    log("Stack<%s> '%s' [%p] created at %s:%d, in function %s",
+        STACK_EL_TYPE_STR, stk->name, stk, stk->file, stk->line, stk->function);
+    log("{\n");
+    log("    capacity = %lu", stk->capacity);
+    log("    size = %lu", stk->size);
+    log("    data<%s> [%p]", STACK_EL_TYPE_STR, stk->data);
+    log("    {\n");
+
+    size_t i = 0;
+    for (; i < stk->size; i++)
+    {
+        // TODO - make macros for auto-generating type format
+        log("        *[%lu] = %lg", i, stk->data[i]);
+    }
+    for (; i < stk->capacity; i++)
+    {
+        log("         [%lu] = 1488 (POIZON!!!!)", i);
+    }
+
+    log("    }");
+    log("}\n");
+
+#endif
+}
+
+// такой формат переменных - НЕ БАГ, а необходимость для дебага
+StackError __init_stack(Stack *stk,
+                        size_t capacity
+                            ON_DEBUG(,
+                                     const char *name,
+                                     const char *file,
+                                     const char *function,
+                                     int line))
 {
     assert(stk);
     assert(capacity);
 
+    // только при дебаге устанавливаем соответствующие поля
+#ifndef NSTKDEBUG
+    assert(name);
+    assert(file);
+    assert(function);
+
+    stk->name = name;
+    stk->file = file;
+    stk->function = function;
+    stk->line = line;
+#endif
+
     flog("Beginning stack [%p] initialization...", stk);
+    dump_stack(stk);
 
     StackError error = is_stack_empty(stk);
     if (error != STACK_OK)
@@ -41,6 +91,8 @@ StackError init_stack(Stack *stk, size_t capacity)
     }
 
     flog("Stack [%p] initialization successful!", stk);
+    dump_stack(stk);
+
     return STACK_OK;
 }
 
@@ -49,6 +101,7 @@ StackError push_stack(Stack *stk, stack_el_t value)
     assert(stk);
 
     flog("Beginning stack [%p] pushing...", stk);
+    dump_stack(stk);
 
     StackError error = is_stack_ok(stk);
     if (error != STACK_OK)
@@ -67,6 +120,7 @@ StackError push_stack(Stack *stk, stack_el_t value)
             return error;
         }
         flog("Stack [%p] growing successful, time for pushing", stk);
+        dump_stack(stk);
     }
 
     stk->data[stk->size++] = value;
@@ -79,6 +133,7 @@ StackError push_stack(Stack *stk, stack_el_t value)
     }
 
     flog("Stack [%p] pushing successfull!", stk);
+    dump_stack(stk);
     return STACK_OK;
 }
 
@@ -87,6 +142,7 @@ StackError pop_stack(Stack *stk, stack_el_t *buffer)
     assert(stk);
 
     flog("Beginning stack [%p] popping...", stk);
+    dump_stack(stk);
 
     StackError error = is_stack_ok(stk);
     if (error != STACK_OK)
@@ -111,6 +167,7 @@ StackError pop_stack(Stack *stk, stack_el_t *buffer)
             return error;
         }
         flog("Stack [%p] reducing successful, time for popping", stk);
+        dump_stack(stk);
     }
 
     // stk->size > 0
@@ -126,6 +183,7 @@ StackError pop_stack(Stack *stk, stack_el_t *buffer)
     }
 
     flog("Stack [%p] popping successfull!", stk);
+    dump_stack(stk);
     return STACK_OK;
 }
 
@@ -134,6 +192,7 @@ StackError destroy_stack(Stack *stk)
     assert(stk);
 
     flog("Beginning stack [%p] destroing...", stk);
+    dump_stack(stk);
 
     StackError error = is_stack_ok(stk);
     if (error != STACK_OK)
@@ -154,6 +213,7 @@ StackError destroy_stack(Stack *stk)
     }
 
     flog("Stack [%p] destroing successful!", stk);
+    dump_stack(stk);
     return STACK_OK;
 }
 
