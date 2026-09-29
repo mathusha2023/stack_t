@@ -21,8 +21,7 @@
 #define __STACK_EL_TYPE_STR_WRAPPER1(type) __STACK_EL_TYPE_STR_WRAPPER2(type)
 #define STACK_EL_TYPE_STR __STACK_EL_TYPE_STR_WRAPPER1(STACK_EL_TYPE)
 
-#define STACK_NAME(stk) #stk
-
+// макрос для дополнительных параметров, которые  нужны только в режиме дебага
 #ifdef NSTKDEBUG
 #define ON_DEBUG(...)
 #else
@@ -33,6 +32,9 @@ typedef STACK_EL_TYPE stack_el_t;
 
 // уменьшение размера стека будет работать только если его размер превышает данное значение
 const size_t MIN_STACK_CAPACITY_TO_REDUCE = 100;
+
+// не связано с художниками
+const stack_el_t CANARY_CONST = (stack_el_t)0xAD01F;
 
 typedef enum StackError
 {
@@ -49,6 +51,7 @@ typedef enum StackError
     STACK_GROWING_NOT_NEED,
     STACK_REDUCING_NOT_NEED,
     STACK_REDUCING_NOT_ALLOWED,
+    STACK_CANARY_DIED,
 } StackError;
 
 static const char *STR_STACK_ERRORS[] = {
@@ -65,6 +68,7 @@ static const char *STR_STACK_ERRORS[] = {
     "STACK_GROWING_NOT_NEED",
     "STACK_REDUCING_NOT_NEED",
     "STACK_REDUCING_NOT_ALLOWED",
+    "STACK_CANARY_DIED",
 };
 
 typedef struct Stack
@@ -101,5 +105,6 @@ StackError is_stack_ok(Stack *stk);
 const char *get_stack_error(StackError error);
 size_t get_capacity(Stack *stk);
 size_t get_size(Stack *stk);
+void check_canary_alive(Stack *stk);
 
 #endif // STACK_H

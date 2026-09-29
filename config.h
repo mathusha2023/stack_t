@@ -21,5 +21,6 @@
     }
 
 const char LOGFILE_NAME[] = "log.txt";
+const double EPSILON = 1e-6;
 
 #endif // CONFIG_H
