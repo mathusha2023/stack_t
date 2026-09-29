@@ -1,10 +1,4 @@
 #include <stdio.h>
-
-// TODO - fix it
-// определение типа элементов нашего стэка
-// если убрать define, будет выбран тип по умолчанию - double
-// #define STACK_EL_TYPE int
-
 #include "stack.h"
 #include "log.h"
 
@@ -24,7 +18,7 @@ int main(void)
 
     for (size_t i = 0; i < 24; i++)
     {
-        push_stack(&stack, i * 10 + 1);
+        push_stack(&stack, i * 10 + 0.282);
     }
 
     error = destroy_stack(&stack);

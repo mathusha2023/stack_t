@@ -13,27 +13,24 @@ void dump_stack(Stack *stk)
 #ifndef NSTKDEBUG
     assert(stk);
 
-    log("Stack<%s> '%s' [%p] created at %s:%d, in function %s",
-        STACK_EL_TYPE_STR, stk->name, stk, stk->file, stk->line, stk->function);
-    log("{\n");
-    log("    capacity = %lu", stk->capacity);
-    log("    size = %lu", stk->size);
-    log("    data<%s> [%p]", STACK_EL_TYPE_STR, stk->data);
-    log("    {\n");
+    flog("");
+    flog("Stack<%s> '%s' [%p] created at %s:%d, in function %s",
+         STACK_EL_TYPE_STR, stk->name, stk, stk->file, stk->line, stk->function);
+    flog("{\n");
+    flog("    capacity = %lu", stk->capacity);
+    flog("    size = %lu", stk->size);
+    flog("    data<%s> [%p]", STACK_EL_TYPE_STR, stk->data);
+    flog("    {\n");
 
     size_t i = 0;
     for (; i < stk->size; i++)
-    {
-        // TODO - make macros for auto-generating type format
-        log("        *[%lu] = %lg", i, stk->data[i]);
-    }
-    for (; i < stk->capacity; i++)
-    {
-        log("         [%lu] = 1488 (POIZON!!!!)", i);
-    }
+        flog("        * [%lu] = " STACK_EL_SPECIFICATOR, i, stk->data[i]);
 
-    log("    }");
-    log("}\n");
+    for (; i < stk->capacity; i++)
+        flog("          [%lu] = 1488 (POIZON!!!!)", i);
+
+    flog("    }");
+    flog("}\n");
 
 #endif
 }

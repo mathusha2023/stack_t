@@ -4,10 +4,6 @@
 #include <stddef.h>
 #include "config.h"
 
-#ifdef NDEBUG
-#define NSTKDEBUG
-#endif // NDEBUG
-
 /*
 Идея с использованием не просто typedef, а его вместе с комбинацией из двух макросов,
 в один из которых мы и определяем тип стэка, а второй служит для получения этого типа в
@@ -16,9 +12,8 @@
 мне кажется очень красивое решение вышло методом коллективного разума
 */
 
-#ifndef STACK_EL_TYPE
 #define STACK_EL_TYPE double
-#endif // STACK_EL_TYPE
+#define STACK_EL_SPECIFICATOR "%lg"
 
 // комбинация 2 обертки + переменная для прокидывания именно
 // значения макроса STACK_EL_TYPE как строки
