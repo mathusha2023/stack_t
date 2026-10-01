@@ -4,14 +4,6 @@
 #include <stddef.h>
 #include "config.h"
 
-/*
-Идея с использованием не просто typedef, а его вместе с комбинацией из двух макросов,
-в один из которых мы и определяем тип стэка, а второй служит для получения этого типа в
-виде строки была заимствована у Егора Гришина @YegorGrishin и доработана
-с использованием двух оберток для макроса превращения в строку,
-мне кажется очень красивое решение вышло методом коллективного разума
-*/
-
 #define STACK_EL_TYPE double
 #define STACK_EL_SPECIFICATOR "%lg"
 
@@ -34,8 +26,8 @@ typedef STACK_EL_TYPE stack_el_t;
 const size_t MIN_STACK_CAPACITY_TO_REDUCE = 100;
 
 // не связано с художниками
-const stack_el_t CANARY_CONST = (stack_el_t)0xAD01F1C;
-const size_t STRUCT_CANARY_CONST = 0xC0C1C04CADEDA;
+const stack_el_t CANARY_CONST = (stack_el_t)0xEDAEDA;
+const size_t STRUCT_CANARY_CONST = 0xC0C1DEDA;
 
 typedef enum StackError
 {
@@ -47,6 +39,10 @@ typedef enum StackError
     STACK_NOT_NULL_CAPACITY,
     STACK_NOT_NULL_SIZE,
     STACK_NOT_NULL_CANARY,
+    STACK_NULL_HASH,
+    STACK_NOT_NULL_HASH,
+    STACK_NULL_RIGHT_DATA_CANARY_INDEX,
+    STACK_NOT_NULL_RIGHT_DATA_CANARY_INDEX,
     STACK_SIZE_GREATER_THAN_CAPACITY,
     STACK_OVERFLOW,
     STACK_EMPTY,
@@ -54,6 +50,7 @@ typedef enum StackError
     STACK_REDUCING_NOT_NEED,
     STACK_REDUCING_NOT_ALLOWED,
     STACK_CANARY_DIED,
+    STACK_INVALID_HASH,
 } StackError;
 
 static const char *STR_STACK_ERRORS[] = {
@@ -65,6 +62,10 @@ static const char *STR_STACK_ERRORS[] = {
     "STACK_NOT_NULL_CAPACITY",
     "STACK_NOT_NULL_SIZE",
     "STACK_NOT_NULL_CANARY",
+    "STACK_NULL_HASH",
+    "STACK_NOT_NULL_HASH",
+    "STACK_NULL_RIGHT_DATA_CANARY_INDEX",
+    "STACK_NOT_NULL_RIGHT_DATA_CANARY_INDEX",
     "STACK_SIZE_GREATER_THAN_CAPACITY",
     "STACK_OVERFLOW",
     "STACK_EMPTY",
@@ -72,6 +73,7 @@ static const char *STR_STACK_ERRORS[] = {
     "STACK_REDUCING_NOT_NEED",
     "STACK_REDUCING_NOT_ALLOWED",
     "STACK_CANARY_DIED",
+    "STACK_INVALID_HASH",
 };
 
 typedef struct Stack
@@ -86,6 +88,8 @@ typedef struct Stack
     stack_el_t *data;
     size_t size;
     size_t capacity;
+    size_t stack_hash;
+    size_t right_data_canary_index;
 
     size_t canary_right;
 

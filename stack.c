@@ -4,6 +4,7 @@
 #include <math.h>
 #include "config.h"
 #include "log.h"
+#include "hash.h"
 
 static StackError grow_stack(Stack *stk);
 static StackError reduce_stack(Stack *stk);
@@ -11,6 +12,7 @@ static int need_stack_reduce(Stack *stk);
 static int is_equal(double a, double b);
 static const char *get_str_canary_status(stack_el_t canary);
 static const char *get_str_struct_canary_status(size_t canary);
+static size_t get_stack_hash(Stack *stk);
 
 void dump_stack(Stack *stk)
 {
@@ -18,20 +20,22 @@ void dump_stack(Stack *stk)
     assert(stk);
 
     flog("");
+    flog("ERROR!!!");
     flog("Stack<%s> '%s' [%p] created at %s:%d, in function %s",
          STACK_EL_TYPE_STR, stk->name, stk, stk->file, stk->line, stk->function);
     flog("{\n");
-    flog("    canary_left = %lu, %s", stk->canary_left, get_str_struct_canary_status(stk->canary_left));
-    flog("    canary_right = %lu, %s", stk->canary_right, get_str_struct_canary_status(stk->canary_right));
+    flog("    canary_left = %x, %s", stk->canary_left, get_str_struct_canary_status(stk->canary_left));
+    flog("    canary_right = %x, %s", stk->canary_right, get_str_struct_canary_status(stk->canary_right));
     flog("");
     flog("    capacity = %lu", stk->capacity);
     flog("    size = %lu", stk->size);
+    flog("    stack_hash = %x", stk->stack_hash);
     flog("    data<%s> [%p]", STACK_EL_TYPE_STR, stk->data);
     flog("    {\n");
 
     if (stk->data)
     {
-        flog("         %s [%lu] = " STACK_EL_SPECIFICATOR " (CANARYYYY)", get_str_canary_status(stk->data[0]), 0, stk->data[0]);
+        flog("         %s [%lu] = %x (CANARYYYY)", get_str_canary_status(stk->data[0]), 0, (size_t)stk->data[0]);
 
         size_t i = 1;
         for (i = 1; i < stk->size + 1; i++)
@@ -42,9 +46,11 @@ void dump_stack(Stack *stk)
         }
 
         for (; i < stk->capacity + 1; i++)
+        {
             flog("             [%lu] = 1488 (POIZON!!!!)", i);
+        }
 
-        flog("         %s [%lu] = " STACK_EL_SPECIFICATOR " (CANARYYYY)", get_str_canary_status(stk->data[stk->capacity + 1]), i, stk->data[stk->capacity + 1]);
+        flog("         %s [%lu] = %x (CANARYYYY)", get_str_canary_status(stk->data[stk->right_data_canary_index]), i, (size_t)stk->data[stk->right_data_canary_index]);
     }
 
     flog("    }");
@@ -102,6 +108,8 @@ StackError __init_stack(Stack *stk,
     stk->data = p;
     stk->data[0] = CANARY_CONST;
     stk->data[capacity + 1] = CANARY_CONST;
+    stk->right_data_canary_index = capacity + 1;
+    stk->stack_hash = get_stack_hash(stk);
 
     error = is_stack_ok(stk);
     if (error != STACK_OK)
@@ -144,6 +152,8 @@ StackError push_stack(Stack *stk, stack_el_t value)
     }
 
     stk->data[stk->size++ + 1] = value;
+
+    stk->stack_hash = get_stack_hash(stk);
 
     error = is_stack_ok(stk);
     if (error != STACK_OK)
@@ -196,6 +206,8 @@ StackError pop_stack(Stack *stk, stack_el_t *buffer)
     *buffer = stk->data[stk->size + 1];
     stk->data[stk->size + 1] = 0;
 
+    stk->stack_hash = get_stack_hash(stk);
+
     error = is_stack_ok(stk);
     if (error != STACK_OK)
     {
@@ -227,6 +239,8 @@ StackError destroy_stack(Stack *stk)
     stk->size = 0;
 
     stk->canary_left = stk->canary_right = 0;
+    stk->right_data_canary_index = 0;
+    stk->stack_hash = 0;
 
     error = is_stack_empty(stk);
     if (error != STACK_OK)
@@ -274,6 +288,18 @@ StackError is_stack_empty(Stack *stk)
         dump_stack(stk);
         return STACK_NOT_NULL_CANARY;
     }
+    if (stk->right_data_canary_index > 0)
+    {
+        flog("Stack [%p] right data canary index not null", stk);
+        dump_stack(stk);
+        return STACK_NOT_NULL_RIGHT_DATA_CANARY_INDEX;
+    }
+    if (stk->stack_hash > 0)
+    {
+        flog("Stack [%p] stack_hash not null", stk);
+        dump_stack(stk);
+        return STACK_NOT_NULL_HASH;
+    }
     return STACK_OK;
 }
 
@@ -299,7 +325,28 @@ StackError is_stack_ok(Stack *stk)
         dump_stack(stk);
         return STACK_SIZE_GREATER_THAN_CAPACITY;
     }
+    if (!stk->right_data_canary_index)
+    {
+        flog("Stack [%p] right_data_canary_index is null", stk);
+        dump_stack(stk);
+        return STACK_NULL_RIGHT_DATA_CANARY_INDEX;
+    }
+    if (!stk->stack_hash)
+    {
+        flog("Stack [%p] stack_hash is null", stk);
+        dump_stack(stk);
+        return STACK_NULL_HASH;
+    }
+
     check_canary_alive(stk);
+
+    size_t new_hash = get_stack_hash(stk);
+    if (stk->stack_hash != new_hash)
+    {
+        flog("Stack [%p] stack_hash is invalid: %x != %x", stk, stk->stack_hash, new_hash);
+        dump_stack(stk);
+        return STACK_INVALID_HASH;
+    }
     return STACK_OK;
 }
 
@@ -329,7 +376,7 @@ void check_canary_alive(Stack *stk)
         abort();
     }
 
-    if (!is_equal((double)stk->data[stk->capacity + 1], (double)CANARY_CONST))
+    if (!is_equal((double)stk->data[stk->right_data_canary_index], (double)CANARY_CONST))
     {
         log("FATAL ERROR: right data canary is died!!");
         dump_stack(stk);
@@ -386,9 +433,12 @@ static StackError grow_stack(Stack *stk)
     temp[0] = CANARY_CONST;
     temp[stk->capacity + 1] = 0;
     temp[2 * stk->capacity + 1] = CANARY_CONST;
+    stk->right_data_canary_index = 2 * stk->capacity + 1;
 
     stk->data = temp;
     stk->capacity *= 2;
+
+    stk->stack_hash = get_stack_hash(stk);
 
     error = is_stack_ok(stk);
     if (error != STACK_OK)
@@ -451,6 +501,9 @@ static StackError reduce_stack(Stack *stk)
     stk->capacity = ++stk->capacity / 2;
     stk->data[0] = CANARY_CONST;
     stk->data[2 * stk->capacity + 1] = CANARY_CONST;
+    stk->right_data_canary_index = 2 * stk->capacity + 1;
+
+    stk->stack_hash = get_stack_hash(stk);
 
     error = is_stack_ok(stk);
     if (error != STACK_OK)
@@ -484,4 +537,20 @@ static const char *get_str_canary_status(stack_el_t canary)
 static const char *get_str_struct_canary_status(size_t canary)
 {
     return canary == STRUCT_CANARY_CONST ? " OK" : "BUG or STACK_EMPTY";
+}
+
+// возвращает хэшированный стэк
+// сам старый хэш не учитывается в хэшировании для корректной работы сравнений
+static size_t get_stack_hash(Stack *stk)
+{
+    assert(stk);
+
+    size_t temp_hash = stk->stack_hash;
+    stk->stack_hash = 1488;
+
+    size_t h = hash((char *)stk, sizeof(Stack));
+
+    stk->stack_hash = temp_hash;
+
+    return h;
 }
