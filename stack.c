@@ -10,6 +10,7 @@ static StackError reduce_stack(Stack *stk);
 static int need_stack_reduce(Stack *stk);
 static int is_equal(double a, double b);
 static const char *get_str_canary_status(stack_el_t canary);
+static const char *get_str_struct_canary_status(size_t canary);
 
 void dump_stack(Stack *stk)
 {
@@ -20,6 +21,9 @@ void dump_stack(Stack *stk)
     flog("Stack<%s> '%s' [%p] created at %s:%d, in function %s",
          STACK_EL_TYPE_STR, stk->name, stk, stk->file, stk->line, stk->function);
     flog("{\n");
+    flog("    canary_left = %lu, %s", stk->canary_left, get_str_struct_canary_status(stk->canary_left));
+    flog("    canary_right = %lu, %s", stk->canary_right, get_str_struct_canary_status(stk->canary_right));
+    flog("");
     flog("    capacity = %lu", stk->capacity);
     flog("    size = %lu", stk->size);
     flog("    data<%s> [%p]", STACK_EL_TYPE_STR, stk->data);
@@ -31,7 +35,11 @@ void dump_stack(Stack *stk)
 
         size_t i = 1;
         for (i = 1; i < stk->size + 1; i++)
+        {
+            if (i > stk->capacity)
+                break;
             flog("           * [%lu] = " STACK_EL_SPECIFICATOR, i, stk->data[i]);
+        }
 
         for (; i < stk->capacity + 1; i++)
             flog("             [%lu] = 1488 (POIZON!!!!)", i);
@@ -81,6 +89,8 @@ StackError __init_stack(Stack *stk,
 
     stk->capacity = capacity;
 
+    stk->canary_left = stk->canary_right = STRUCT_CANARY_CONST;
+
     stack_el_t *p = (stack_el_t *)calloc(capacity + 2, sizeof(stack_el_t));
     if (!p)
     {
@@ -110,7 +120,7 @@ StackError push_stack(Stack *stk, stack_el_t value)
 {
     assert(stk);
 
-    flog("Beginning stack [%p] pushing...", stk);
+    flog("Beginning stack [%p] pushing value " STACK_EL_SPECIFICATOR "...", stk, value);
 
     StackError error = is_stack_ok(stk);
     if (error != STACK_OK)
@@ -143,7 +153,7 @@ StackError push_stack(Stack *stk, stack_el_t value)
         return error;
     }
 
-    flog("Stack [%p] pushing successfull!", stk);
+    flog("Stack [%p] pushing successfull. New element: [%lu] = " STACK_EL_SPECIFICATOR, stk, stk->size, value);
     return STACK_OK;
 }
 
@@ -194,7 +204,7 @@ StackError pop_stack(Stack *stk, stack_el_t *buffer)
         return error;
     }
 
-    flog("Stack [%p] popping successfull!", stk);
+    flog("Stack [%p] popping successfull! Popped element: " STACK_EL_SPECIFICATOR, stk, *buffer);
     return STACK_OK;
 }
 
@@ -215,6 +225,8 @@ StackError destroy_stack(Stack *stk)
     free_ptr(stk->data);
     stk->capacity = 0;
     stk->size = 0;
+
+    stk->canary_left = stk->canary_right = 0;
 
     error = is_stack_empty(stk);
     if (error != STACK_OK)
@@ -250,6 +262,18 @@ StackError is_stack_empty(Stack *stk)
         dump_stack(stk);
         return STACK_NOT_NULL_SIZE;
     }
+    if (stk->canary_left > 0)
+    {
+        flog("Stack [%p] left canary not null", stk);
+        dump_stack(stk);
+        return STACK_NOT_NULL_CANARY;
+    }
+    if (stk->canary_right > 0)
+    {
+        flog("Stack [%p] right canary not null", stk);
+        dump_stack(stk);
+        return STACK_NOT_NULL_CANARY;
+    }
     return STACK_OK;
 }
 
@@ -284,16 +308,30 @@ void check_canary_alive(Stack *stk)
     assert(stk);
     assert(stk->data);
 
-    if (!is_equal(stk->data[0], CANARY_CONST))
+    if (stk->canary_left != STRUCT_CANARY_CONST)
     {
-        log("FATAL ERROR: left canary is died!!");
+        log("FATAL ERROR: left stack canary is died!!");
         dump_stack(stk);
         abort();
     }
 
-    if (!is_equal(stk->data[stk->capacity + 1], CANARY_CONST))
+    if (stk->canary_right != STRUCT_CANARY_CONST)
     {
-        log("FATAL ERROR: right canary is died!!");
+        log("FATAL ERROR: right stack canary is died!!");
+        dump_stack(stk);
+        abort();
+    }
+
+    if (!is_equal((double)stk->data[0], (double)CANARY_CONST))
+    {
+        log("FATAL ERROR: left data canary is died!!");
+        dump_stack(stk);
+        abort();
+    }
+
+    if (!is_equal((double)stk->data[stk->capacity + 1], (double)CANARY_CONST))
+    {
+        log("FATAL ERROR: right data canary is died!!");
         dump_stack(stk);
         abort();
     }
@@ -440,5 +478,10 @@ static int is_equal(double a, double b)
 
 static const char *get_str_canary_status(stack_el_t canary)
 {
-    return is_equal(canary, CANARY_CONST) ? " OK" : "BUG";
+    return is_equal((double)canary, (double)CANARY_CONST) ? " OK" : "BUG";
+}
+
+static const char *get_str_struct_canary_status(size_t canary)
+{
+    return canary == STRUCT_CANARY_CONST ? " OK" : "BUG or STACK_EMPTY";
 }

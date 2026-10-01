@@ -34,7 +34,8 @@ typedef STACK_EL_TYPE stack_el_t;
 const size_t MIN_STACK_CAPACITY_TO_REDUCE = 100;
 
 // не связано с художниками
-const stack_el_t CANARY_CONST = (stack_el_t)0xAD01F;
+const stack_el_t CANARY_CONST = (stack_el_t)0xAD01F1C;
+const size_t STRUCT_CANARY_CONST = 0xC0C1C04CADEDA;
 
 typedef enum StackError
 {
@@ -45,6 +46,7 @@ typedef enum StackError
     STACK_NULL_CAPACITY,
     STACK_NOT_NULL_CAPACITY,
     STACK_NOT_NULL_SIZE,
+    STACK_NOT_NULL_CANARY,
     STACK_SIZE_GREATER_THAN_CAPACITY,
     STACK_OVERFLOW,
     STACK_EMPTY,
@@ -62,6 +64,7 @@ static const char *STR_STACK_ERRORS[] = {
     "STACK_NULL_CAPACITY",
     "STACK_NOT_NULL_CAPACITY",
     "STACK_NOT_NULL_SIZE",
+    "STACK_NOT_NULL_CANARY",
     "STACK_SIZE_GREATER_THAN_CAPACITY",
     "STACK_OVERFLOW",
     "STACK_EMPTY",
@@ -73,6 +76,8 @@ static const char *STR_STACK_ERRORS[] = {
 
 typedef struct Stack
 {
+    size_t canary_left;
+
     ON_DEBUG(const char *name;
              const char *file;
              const char *function;
@@ -81,6 +86,8 @@ typedef struct Stack
     stack_el_t *data;
     size_t size;
     size_t capacity;
+
+    size_t canary_right;
 
 } Stack;
 
