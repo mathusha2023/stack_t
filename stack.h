@@ -3,7 +3,12 @@
 
 #include <stddef.h>
 #include "config.h"
+#include "log.h"
 
+// раскомментировать для отключения режима отладки стэка
+// #define NSTKDEBUG
+
+// значения которые по сути и задают полное поведение стэка
 #define STACK_EL_TYPE double
 #define STACK_EL_SPECIFICATOR "%lg"
 
@@ -20,12 +25,18 @@
 #define ON_DEBUG(...) __VA_ARGS__
 #endif // NSTKDEBUG
 
+// логирование стэка
+#ifndef NSTKDEBUG
+#define stklog(message, ...) flog(message, ##__VA_ARGS__)
+#else
+#define stklog(message, ...)
+#endif
+
 typedef STACK_EL_TYPE stack_el_t;
 
 // уменьшение размера стека будет работать только если его размер превышает данное значение
 const size_t MIN_STACK_CAPACITY_TO_REDUCE = 100;
 
-// не связано с художниками
 const stack_el_t CANARY_CONST = (stack_el_t)0xEDAEDA;
 const size_t STRUCT_CANARY_CONST = 0xC0C1DEDA;
 
@@ -78,7 +89,7 @@ static const char *STR_STACK_ERRORS[] = {
 
 typedef struct Stack
 {
-    size_t canary_left;
+    ON_DEBUG(size_t canary_left;)
 
     ON_DEBUG(const char *name;
              const char *file;
@@ -88,10 +99,11 @@ typedef struct Stack
     stack_el_t *data;
     size_t size;
     size_t capacity;
-    size_t stack_hash;
-    size_t right_data_canary_index;
 
-    size_t canary_right;
+    ON_DEBUG(size_t stack_hash;
+             size_t right_data_canary_index;)
+
+    ON_DEBUG(size_t canary_right;)
 
 } Stack;
 
@@ -116,6 +128,5 @@ StackError is_stack_ok(Stack *stk);
 const char *get_stack_error(StackError error);
 size_t get_capacity(Stack *stk);
 size_t get_size(Stack *stk);
-void check_canary_alive(Stack *stk);
 
 #endif // STACK_H

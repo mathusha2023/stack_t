@@ -10,7 +10,6 @@ int main(void)
 
     StackError error = STACK_OK;
     Stack stack = {};
-    // stack.canary_left = 1;
 
     error = init_stack(&stack, 10);
     if (error != STACK_OK)
@@ -18,18 +17,11 @@ int main(void)
         log("Error while initializing stack [%p]: %s", &stack, get_stack_error(error));
         return error;
     }
-    stack.size++;
 
-    error = push_stack(&stack, 99999.99999);
-    if (error != STACK_OK)
-    {
-        log("Error while pushing stack [%p]: %s", &stack, get_stack_error(error));
-        return error;
-    }
-
+    const size_t num = 10000;
     stack_el_t a = 0;
 
-    for (int i = 0; i < 1000; i++)
+    for (size_t i = 0; i < num; i++)
     {
         error = push_stack(&stack, 10 * i + 2.8);
         if (error != STACK_OK)
@@ -39,16 +31,16 @@ int main(void)
         }
     }
 
-    // stack.size = stack.capacity + 10;
-    // memset(&stack, 67, 2);
-
-    error = pop_stack(&stack, &a);
-    if (error != STACK_OK)
+    for (size_t i = 0; i < num; i++)
     {
-        log("Error while popping stack [%p]: %s", &stack, get_stack_error(error));
-        return error;
+        error = pop_stack(&stack, &a);
+        if (error != STACK_OK)
+        {
+            log("Error while popping stack [%p]: %s", &stack, get_stack_error(error));
+            return error;
+        }
+        printf("Popped element [%lu] is " STACK_EL_SPECIFICATOR "\n", i, a);
     }
-    printf("Popped element is " STACK_EL_SPECIFICATOR "\n", a);
 
     error = destroy_stack(&stack);
     if (error != STACK_OK)

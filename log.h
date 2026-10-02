@@ -1,9 +1,8 @@
 #ifndef LOG_H
 #define LOG_H
 
-#ifdef NDEBUG
-#define DISABLE_LOGS
-#endif // NDEBUG
+// отключает логи
+// #define DISABLE_LOGS
 
 #include <stdio.h>
 #include <time.h>
@@ -16,6 +15,7 @@ void restart_log();
 void _logfunc(const char *__file__, int __line__, int need_console, const char *message, ...);
 
 #ifdef DISABLE_LOGS
+
 #define log(message, ...)
 #define flog(message, ...)
 
