@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 
+// довольно большое простое число
 const size_t NUM_BUCKETS = 18446744073709551557ULL;
 
 size_t hash(const char *s, size_t size);

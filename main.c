@@ -1,53 +1,93 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "stack.h"
 #include "log.h"
+
+static void print_status(const char *label, Stack *stk);
 
 int main(void)
 {
     restart_log();
 
     StackError error = STACK_OK;
-    Stack stack = {};
 
-    error = init_stack(&stack, 10);
+    // CASE 1. Переполнение соседнего буфера
+
+    // Структура чтобы все лежало подряд
+    struct
+    {
+        char input[16];
+        Stack stk;
+    } case1 = {};
+
+    error = init_stack(&case1.stk, 4);
     if (error != STACK_OK)
     {
-        log("Error while initializing stack [%p]: %s", &stack, get_stack_error(error));
+        log("init_stack failed: %s", get_stack_error(error));
         return error;
     }
 
-    const size_t num = 10000;
-    stack_el_t a = 0;
-
-    for (size_t i = 0; i < num; i++)
+    for (int x = 1; x <= 20.; x++)
     {
-        error = push_stack(&stack, 10 * i + 2.8);
+        error = push_stack(&case1.stk, x);
         if (error != STACK_OK)
         {
-            log("Error while pushing stack [%p]: %s", &stack, get_stack_error(error));
+            log("push failed: %s", get_stack_error(error));
             return error;
         }
     }
 
-    for (size_t i = 0; i < num; i++)
-    {
-        error = pop_stack(&stack, &a);
-        if (error != STACK_OK)
-        {
-            log("Error while popping stack [%p]: %s", &stack, get_stack_error(error));
-            return error;
-        }
-        printf("Popped element [%lu] is " STACK_EL_SPECIFICATOR "\n", i, a);
-    }
+    print_status("before overflow", &case1.stk); // STACK_OK
 
-    error = destroy_stack(&stack);
+    // Вводим строку длиннее буфера и задеваем канарейку стэка
+    strcpy(case1.input, "AAAAAAAAAAAAAAAAAAAAAAAA");
+
+    error = push_stack(&case1.stk, 1000 - 7);
     if (error != STACK_OK)
     {
-        log("Error while destroing stack [%p]: %s", &stack, get_stack_error(error));
+        log("push after overflow                 : %s", get_stack_error(error));
+        return error;
+    }
+
+    // CASE 2. Нечаянная порча поля size
+    Stack stk2 = {};
+    error = init_stack(&stk2, 4);
+    if (error != STACK_OK)
+    {
+        log("init_stack failed: %s", get_stack_error(error));
+        return error;
+    }
+
+    push_stack(&stk2, 10);
+    push_stack(&stk2, 20);
+    push_stack(&stk2, 30);
+
+    print_status("before size corruption", &stk2); // STACK_OK
+
+    // Меняем значение size
+    stk2.size = 0;
+
+    print_status("after size corruption", &stk2); // STACK_INVALID_HASH
+
+    stack_el_t buf = 0;
+    error = pop_stack(&stk2, &buf);
+    if (error != STACK_OK)
+    {
+        log("pop after size corruption           : %s", get_stack_error(error));
+        return error;
+    }
+
+    error = destroy_stack(&stk2);
+    if (error != STACK_OK)
+    {
+        log("destroy corrupted stk2              : %s", get_stack_error(error));
         return error;
     }
 
     return 0;
+}
+
+static void print_status(const char *label, Stack *stk)
+{
+    StackError error = is_stack_ok(stk);
+    log("%-35s : %s", label, get_stack_error(error));
 }

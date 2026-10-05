@@ -30,18 +30,18 @@ void dump_stack(Stack *stk)
     stklog("Stack<%s> '%s' [%p] created at %s:%d, in function %s",
            STACK_EL_TYPE_STR, stk->name, stk, stk->file, stk->line, stk->function);
     stklog("{\n");
-    stklog("    canary_left = %x, %s", stk->canary_left, get_str_struct_canary_status(stk->canary_left));
-    stklog("    canary_right = %x, %s", stk->canary_right, get_str_struct_canary_status(stk->canary_right));
+    stklog("    canary_left = %X, %s", stk->canary_left, get_str_struct_canary_status(stk->canary_left));
+    stklog("    canary_right = %X, %s", stk->canary_right, get_str_struct_canary_status(stk->canary_right));
     stklog("");
     stklog("    capacity = %lu", stk->capacity);
     stklog("    size = %lu", stk->size);
-    stklog("    stack_hash = %x", stk->stack_hash);
+    stklog("    stack_hash = %X", stk->stack_hash);
     stklog("    data<%s> [%p]", STACK_EL_TYPE_STR, stk->data);
     stklog("    {\n");
 
     if (stk->data)
     {
-        stklog("         %s [%lu] = %x (CANARYYYY)", get_str_canary_status(stk->data[0]), 0, (size_t)stk->data[0]);
+        stklog("         %s [%lu] = %X (CANARYYYY)", get_str_canary_status(stk->data[0]), 0, (size_t)stk->data[0]);
 
         size_t i = 1;
         for (i = 1; i < stk->size + 1; i++)
@@ -56,7 +56,7 @@ void dump_stack(Stack *stk)
             stklog("             [%lu] = 1488 (POIZON!!!!)", i);
         }
 
-        stklog("         %s [%lu] = %x (CANARYYYY)", get_str_canary_status(stk->data[stk->right_data_canary_index]), i, (size_t)stk->data[stk->right_data_canary_index]);
+        stklog("         %s [%lu] = %X (CANARYYYY)", get_str_canary_status(stk->data[stk->right_data_canary_index]), i, (size_t)stk->data[stk->right_data_canary_index]);
     }
 
     stklog("    }");

@@ -38,7 +38,7 @@ typedef STACK_EL_TYPE stack_el_t;
 const size_t MIN_STACK_CAPACITY_TO_REDUCE = 100;
 
 const stack_el_t CANARY_CONST = (stack_el_t)0xEDAEDA;
-const size_t STRUCT_CANARY_CONST = 0xC0C1DEDA;
+const size_t STRUCT_CANARY_CONST = 0xEB1DEDA;
 
 typedef enum StackError
 {
