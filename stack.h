@@ -116,7 +116,7 @@ StackError __init_stack(Stack *stk, size_t capacity ON_DEBUG(,
 #ifdef NSTKDEBUG
 #define init_stack(stk, capacity) __init_stack(stk, capacity)
 #else
-#define init_stack(stk, capacity) __init_stack(stk, capacity, &(#stk[1]), __FILE__, __func__, __LINE__)
+#define init_stack(stk, capacity) __init_stack(stk, capacity, #stk, __FILE__, __func__, __LINE__)
 #endif // NSTKDEBUG
 
 void dump_stack(Stack *stk);

@@ -12,7 +12,7 @@ int main(void)
 {
     restart_log();
 
-    StackError error = case1();
+    StackError error = case3();
     if (error != STACK_OK)
     {
         log("ERROR: %s", get_stack_error(error));
@@ -20,12 +20,6 @@ int main(void)
     }
 
     return 0;
-}
-
-static void print_status(const char *label, Stack *stk)
-{
-    StackError error = is_stack_ok(stk);
-    log("%-35s : %s", label, get_stack_error(error));
 }
 
 // нечаянно залезли в память пренадлежащую стеку
@@ -154,4 +148,10 @@ static StackError case3(void)
     log("Time spent: %lg seconds", seconds);
 
     return error;
+}
+
+static void print_status(const char *label, Stack *stk)
+{
+    StackError error = is_stack_ok(stk);
+    log("%-35s : %s", label, get_stack_error(error));
 }
